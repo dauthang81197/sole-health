@@ -17,4 +17,4 @@ npm run build    # production build
 npm run lint      # oxlint
 ```
 
-Requests to `/api/*` during `npm run dev` are proxied to the backend at `http://localhost:3000` (see `vite.config.ts`).
+Requests to `/api/*` during `npm run dev` are proxied to the IAM service at `http://localhost:3000` (see `vite.config.ts`).

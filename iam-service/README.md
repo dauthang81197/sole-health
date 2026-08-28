@@ -1,6 +1,6 @@
-# Sole Health — Backend
+# Sole Health — IAM Service
 
-NestJS API scaffold with TypeORM + PostgreSQL. No auth or business logic yet — just the base setup.
+NestJS API scaffold with TypeORM + PostgreSQL. Owns auth, users, organizations, role-based access control, and plan/subscription. No business logic implemented yet — just the base setup.
 
 ## Setup
 
