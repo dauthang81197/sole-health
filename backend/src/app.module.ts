@@ -1,31 +1,68 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import {
+  I18nModule,
+  QueryResolver,
+  HeaderResolver,
+  AcceptLanguageResolver,
+} from 'nestjs-i18n';
+import * as path from 'path';
+import { configs } from './configs';
+import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { LoggingInterceptor } from './interceptor/logging.interceptor';
+import { TransformInterceptor } from './interceptor/transform.interceptor';
+import { RequestContextMiddleware } from './middleware/request-context.middleware';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: configs,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get<string>('DB_USERNAME', 'postgres'),
-        password: config.get<string>('DB_PASSWORD', 'postgres'),
-        database: config.get<string>('DB_NAME', 'sole_health'),
+        host: config.get<string>('database.host'),
+        port: config.get<number>('database.port'),
+        username: config.get<string>('database.username'),
+        password: config.get<string>('database.password'),
+        database: config.get<string>('database.name'),
         autoLoadEntities: true,
-        synchronize: config.get<string>('NODE_ENV', 'development') !== 'production',
+        synchronize: config.get<string>('app.env') !== 'production',
       }),
     }),
+    I18nModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        fallbackLanguage: config.get<string>('app.fallbackLanguage', 'en'),
+        loaderOptions: {
+          path: path.join(__dirname, '/i18n/'),
+          watch: true,
+        },
+      }),
+      resolvers: [
+        { use: QueryResolver, options: ['lang'] },
+        AcceptLanguageResolver,
+        new HeaderResolver(['x-lang']),
+      ],
+    }),
+    HealthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}
