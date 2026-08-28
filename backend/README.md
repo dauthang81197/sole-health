@@ -26,7 +26,29 @@ npm run test        # unit tests
 npm run test:e2e     # e2e tests
 ```
 
+## Structure
+
+```
+src/
+  common/        shared DTOs (pagination) and constants
+  configs/       typed config (registerAs), loaded into ConfigModule
+  database/      standalone TypeORM DataSource + migrations for the CLI
+  decorators/    @Public, @CurrentUser — stubs, not read by any guard yet
+  exceptions/    BusinessException base class
+  filters/       AllExceptionsFilter — global, consistent JSON error shape
+  guards/        empty — add auth guards here
+  i18n/          nestjs-i18n translation files (en, vi)
+  interceptor/   LoggingInterceptor, TransformInterceptor (wraps success responses)
+  interfaces/    shared response-shape types
+  libs/          empty — reserved for shared/external-service wrappers
+  middleware/    RequestContextMiddleware (x-request-id)
+  modules/       feature modules (see modules/health for the pattern)
+  strategy/      empty — add Passport strategies here
+```
+
 ## Notes
 
-- `TypeOrmModule` is configured in `src/app.module.ts` with `synchronize: true` outside production — fine for local dev, switch to migrations before shipping anything real.
-- Global `ValidationPipe` (whitelist + transform) and CORS are already enabled in `src/main.ts`.
+- `TypeOrmModule` is configured in `src/app.module.ts` with `synchronize: true` outside production — fine for local dev, switch to migrations (`npm run migration:generate` / `migration:run`) before shipping anything real.
+- Global `ValidationPipe` (whitelist + transform), CORS, `AllExceptionsFilter`, and both interceptors are already wired in `src/app.module.ts` / `src/main.ts`.
+- Every success response is wrapped as `{ statusCode, message, data, timestamp }` by `TransformInterceptor` — plan API consumers accordingly.
+- `guards/`, `strategy/`, and `libs/` are intentionally empty — that's where auth (JWT strategy + guards) goes when you build it.
