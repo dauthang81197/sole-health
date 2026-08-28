@@ -1,0 +1,6 @@
+{
+  "welcome": "Welcome to Sole Health Task Service",
+  "health": {
+    "ok": "Service is healthy"
+  }
+}
