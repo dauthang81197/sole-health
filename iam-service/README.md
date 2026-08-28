@@ -19,6 +19,12 @@ npm run build        # production build
 npm run start:prod   # run compiled build
 ```
 
+## API
+
+- Versioned via URI: every route is prefixed `/v1/...` (`app.enableVersioning`, default version `1` — see `src/main.ts`). Bump a route's version with `@Version('2')` on the controller/handler when it needs to diverge.
+- Swagger docs: `http://localhost:3000/docs` (`@nestjs/swagger`, config in `src/main.ts`). Add `@ApiTags`/`@ApiOperation`/`@ApiOkResponse` to new controllers and `@ApiProperty` to new DTOs — see `src/modules/health` for the pattern.
+- Every success response is wrapped by `TransformInterceptor` into `{ statusCode, message, data, timestamp }` — Swagger currently documents the unwrapped `data` shape only (a known gap with global response interceptors), keep that in mind when reading the docs.
+
 ## Test
 
 ```bash
@@ -50,5 +56,4 @@ src/
 
 - `TypeOrmModule` is configured in `src/app.module.ts` with `synchronize: true` outside production — fine for local dev, switch to migrations (`npm run migration:generate` / `migration:run`) before shipping anything real.
 - Global `ValidationPipe` (whitelist + transform), CORS, `AllExceptionsFilter`, and both interceptors are already wired in `src/app.module.ts` / `src/main.ts`.
-- Every success response is wrapped as `{ statusCode, message, data, timestamp }` by `TransformInterceptor` — plan API consumers accordingly.
 - `guards/`, `strategy/`, and `libs/` are intentionally empty — that's where auth (JWT strategy + guards) goes when you build it.
